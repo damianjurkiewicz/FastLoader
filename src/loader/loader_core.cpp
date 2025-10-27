@@ -3,6 +3,7 @@
 #include "audio.h"
 #include "cargrp.h"
 #include "objdat.h"
+#include "additionaltxd.h"
 
 FastLoader::FastLoader(HINSTANCE pluginHandle)
 {
@@ -13,6 +14,10 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
     }
 
     ParseModloader();
+    if (gConfig.ReadBoolean("MAIN", "AdditionalTxdLoader", true))
+    {
+        AdditionalTXD.Init();
+    }
     FLAAudioLoader.Process();
 }
 
@@ -44,19 +49,20 @@ bool FastLoader::IsPluginNameValid()
 
 void FastLoader::ParseModloader()
 {
-    std::function<void(const std::filesystem::path&)> traverse;
-    traverse = [&](const std::filesystem::path& dir) {
-        for (const auto& entry : std::filesystem::directory_iterator(dir))
+    std::function<void(const std::filesystem::path &)> traverse;
+    traverse = [&](const std::filesystem::path &dir)
+    {
+        for (const auto &entry : std::filesystem::directory_iterator(dir))
         {
             if (entry.is_directory())
             {
                 std::string folderName = entry.path().filename().string();
                 if (!folderName.empty() && folderName[0] == '.')
                 {
-                    continue; 
+                    continue;
                 }
 
-                traverse(entry.path()); 
+                traverse(entry.path());
                 continue;
             }
 
@@ -70,15 +76,19 @@ void FastLoader::ParseModloader()
             std::string fileName = entry.path().filename().string();
             std::string parentPath = entry.path().parent_path().string();
 
-            if (fileName == "object.dat" || fileName == "cargrp.dat") {
+            if (fileName == "object.dat" || fileName == "cargrp.dat")
+            {
                 static int result = MessageBox(NULL, "Found object.dat or cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                if (result == IDYES) {
+                if (result == IDYES)
+                {
                     std::string newName = fileName + ".bak";
                     std::string newPath = parentPath + "\\" + newName;
-                    try {
+                    try
+                    {
                         std::filesystem::rename(path, newPath);
                     }
-                    catch (const std::exception& e) {
+                    catch (const std::exception &e)
+                    {
                         MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
                     }
                 }
@@ -94,14 +104,17 @@ void FastLoader::ParseModloader()
                     {
                         continue;
                     }
-                    
-                    if (gConfig.ReadBoolean("MAIN", "CargrpLoader", true)) {
+
+                    if (gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
+                    {
                         CargrpLoader.Parse(line);
                     }
-                    if (gConfig.ReadBoolean("MAIN", "ObjDatLoader", true)) {
+                    if (gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
+                    {
                         ObjDatLoader.Parse(line);
                     }
-                     if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true)) {
+                    if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
+                    {
                         FLAAudioLoader.Parse(line);
                     }
                 }
