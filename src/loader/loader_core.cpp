@@ -21,11 +21,13 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
     ParseModloader();
 
     // 3. Process the loaded data
-    if (gConfig.ReadBoolean("MAIN", "AdditionalTxdLoader", true))
+    // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+    if (gConfig.ReadInteger("MAIN", "AdditionalTxdLoader", 1) == 1)
     {
         AdditionalTXD.Init();
     }
-    if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
+    // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+    if (gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1) == 1)
     {
         FLAAudioLoader.Process();
     }
@@ -62,9 +64,10 @@ bool FastLoader::IsPluginNameValid()
 void FastLoader::HandleVanillaDataFiles()
 {
     // 1. Read INI settings at the very beginning
-    bool bObjDatLoaderEnabled = gConfig.ReadBoolean("MAIN", "ObjDatLoader", true);
-    bool bCargrpLoaderEnabled = gConfig.ReadBoolean("MAIN", "CargrpLoader", true);
-    bool bFLAAudioLoaderEnabled = gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true); // Added this check
+    // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+    bool bObjDatLoaderEnabled = (gConfig.ReadInteger("MAIN", "ObjDatLoader", 1) == 1);
+    bool bCargrpLoaderEnabled = (gConfig.ReadInteger("MAIN", "CargrpLoader", 1) == 1);
+    bool bFLAAudioLoaderEnabled = (gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1) == 1);
 
     // <<< START OF AUDIO BACKUP LOGIC >>>
     // This logic runs independently, as it checks the 'data' folder, not 'modloader'
@@ -136,6 +139,7 @@ void FastLoader::HandleVanillaDataFiles()
                 // --- Logic for object.dat ---
                 if (bObjDatLoaderEnabled && fileName == "object.dat")
                 {
+                    // ... (no changes inside this block)
                     std::string path = entry.path().string();
                     std::string parentPath = entry.path().parent_path().string();
                     int result = MessageBox(NULL, "Found object.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
@@ -157,6 +161,7 @@ void FastLoader::HandleVanillaDataFiles()
                 // --- Logic for cargrp.dat ---
                 if (bCargrpLoaderEnabled && fileName == "cargrp.dat")
                 {
+                    // ... (no changes inside this block)
                     std::string path = entry.path().string();
                     std::string parentPath = entry.path().parent_path().string();
                     int result = MessageBox(NULL, "Found cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
@@ -193,6 +198,7 @@ void FastLoader::ParseModloader()
             {
                 if (entry.is_directory())
                 {
+                    // ... (no changes)
                     std::string folderName = entry.path().filename().string();
                     if (!folderName.empty() && folderName[0] == '.')
                     {
@@ -211,9 +217,6 @@ void FastLoader::ParseModloader()
                 std::string ext = entry.path().extension().string();
                 std::string path = entry.path().string();
 
-                // object.dat logic removed from here
-                // cargrp.dat logic removed from here
-
                 // This function now ONLY parses .fastloader files
                 if (ext == ".fastloader")
                 {
@@ -226,15 +229,18 @@ void FastLoader::ParseModloader()
                             continue;
                         }
 
-                        if (gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
+                        // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+                        if (gConfig.ReadInteger("MAIN", "CargrpLoader", 1) == 1)
                         {
                             CargrpLoader.Parse(line);
                         }
-                        if (gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
+                        // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+                        if (gConfig.ReadInteger("MAIN", "ObjDatLoader", 1) == 1)
                         {
                             ObjDatLoader.Parse(line);
                         }
-                        if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
+                        // <<< CHANGED: Using ReadInteger for 0/1 values >>>
+                        if (gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1) == 1)
                         {
                             FLAAudioLoader.Parse(line);
                         }
