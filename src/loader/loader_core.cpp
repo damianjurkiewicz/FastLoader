@@ -49,79 +49,108 @@ bool FastLoader::IsPluginNameValid()
 
 void FastLoader::ParseModloader()
 {
-    std::function<void(const std::filesystem::path &)> traverse;
-    traverse = [&](const std::filesystem::path &dir)
-    {
-        for (const auto &entry : std::filesystem::directory_iterator(dir))
+    std::function<void(const std::filesystem::path&)> traverse;
+    traverse = [&](const std::filesystem::path& dir)
         {
-            if (entry.is_directory())
+            for (const auto& entry : std::filesystem::directory_iterator(dir))
             {
-                std::string folderName = entry.path().filename().string();
-                if (!folderName.empty() && folderName[0] == '.')
+                if (entry.is_directory())
                 {
-                    continue;
-                }
-
-                traverse(entry.path());
-                continue;
-            }
-
-            if (!entry.is_regular_file())
-            {
-                continue;
-            }
-
-            std::string ext = entry.path().extension().string();
-            std::string path = entry.path().string();
-            std::string fileName = entry.path().filename().string();
-            std::string parentPath = entry.path().parent_path().string();
-
-            if (fileName == "object.dat" || fileName == "cargrp.dat")
-            {
-                static int result = MessageBox(NULL, "Found object.dat or cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                if (result == IDYES)
-                {
-                    std::string newName = fileName + ".bak";
-                    std::string newPath = parentPath + "\\" + newName;
-                    try
-                    {
-                        std::filesystem::rename(path, newPath);
-                    }
-                    catch (const std::exception &e)
-                    {
-                        MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                    }
-                }
-            }
-
-            if (ext == ".fastloader")
-            {
-                std::ifstream in(path);
-                std::string line;
-                while (getline(in, line))
-                {
-                    if (line.starts_with(";") || line.starts_with("//") || line.starts_with("#"))
+                    std::string folderName = entry.path().filename().string();
+                    if (!folderName.empty() && folderName[0] == '.')
                     {
                         continue;
                     }
 
-                    if (gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
+                    traverse(entry.path());
+                    continue;
+                }
+
+                if (!entry.is_regular_file())
+                {
+                    continue;
+                }
+
+                std::string ext = entry.path().extension().string();
+                std::string path = entry.path().string();
+                std::string fileName = entry.path().filename().string();
+                std::string parentPath = entry.path().parent_path().string();
+
+
+                // <<< START OF CHANGES FOR OBJECT.DAT >>>
+                // The question will only appear if "ObjDatLoader" is true AND the file is found
+                if (fileName == "object.dat" && gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
+                {
+                    // Removed 'static' from 'result' so the question appears for EVERY file found, not just once.
+                    int result = MessageBox(NULL, "Found object.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
+                    if (result == IDYES)
                     {
-                        CargrpLoader.Parse(line);
-                    }
-                    if (gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
-                    {
-                        ObjDatLoader.Parse(line);
-                    }
-                    if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
-                    {
-                        FLAAudioLoader.Parse(line);
+                        std::string newName = fileName + ".bak";
+                        std::string newPath = parentPath + "\\" + newName;
+                        try
+                        {
+                            std::filesystem::rename(path, newPath);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
+                        }
                     }
                 }
-                in.close();
-            }
-        }
-    };
+                // <<< END OF CHANGES FOR OBJECT.DAT >>>
 
-    traverse(GAME_PATH((char *)"modloader"));
+
+                // <<< START OF CHANGES FOR CARGRP.DAT >>>
+                // The question will only appear if "CargrpLoader" is true AND the file is found
+                if (fileName == "cargrp.dat" && gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
+                {
+                    // Removed 'static' from 'result' for the same reason as above.
+                    int result = MessageBox(NULL, "Found cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
+                    if (result == IDYES)
+                    {
+                        std::string newName = fileName + ".bak";
+                        std::string newPath = parentPath + "\\" + newName;
+                        try
+                        {
+                            std::filesystem::rename(path, newPath);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
+                        }
+                    }
+                }
+                // <<< END OF CHANGES FOR CARGRP.DAT >>>
+
+
+                if (ext == ".fastloader")
+                {
+                    std::ifstream in(path);
+                    std::string line;
+                    while (getline(in, line))
+                    {
+                        if (line.starts_with(";") || line.starts_with("//") || line.starts_with("#"))
+                        {
+                            continue;
+                        }
+
+                        if (gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
+                        {
+                            CargrpLoader.Parse(line);
+                        }
+                        if (gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
+                        {
+                            ObjDatLoader.Parse(line);
+                        }
+                        if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
+                        {
+                            FLAAudioLoader.Parse(line);
+                        }
+                    }
+                    in.close();
+                }
+            }
+        };
+
+    traverse(GAME_PATH((char*)"modloader"));
 }
