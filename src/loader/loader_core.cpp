@@ -4,11 +4,11 @@
 #include "cargrp.h"
 #include "objdat.h"
 #include "additionaltxd.h"
-#include "default_audio_data.h" // <<< ADDED NEW HEADER FILE
+#include "default_audio_data.h" // This include should now work
 
 FastLoader::FastLoader(HINSTANCE pluginHandle)
-{  
-    // ... (no changes)
+{
+    // ... (no changes in this function)
     handle = pluginHandle;
     if (!IsPluginNameValid())
     {
@@ -28,7 +28,7 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
 
 bool FastLoader::IsPluginNameValid()
 {
-    // ... (no changes)
+    // ... (no changes in this function)
     char buf[MAX_PATH];
     DWORD result = GetModuleFileName(handle, buf, MAX_PATH);
     if (!result)
@@ -57,7 +57,6 @@ void FastLoader::HandleVanillaDataFiles()
     bool bObjDatLoaderEnabled = (gConfig.ReadInteger("MAIN", "ObjDatLoader", 1) == 1);
     bool bCargrpLoaderEnabled = (gConfig.ReadInteger("MAIN", "CargrpLoader", 1) == 1);
 
-    // Read the integer value for audio
     int flaAudioLoaderSetting = gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1);
 
     std::string settingsPath = GAME_PATH((char*)"data/gtasa_vehicleAudioSettings.cfg");
@@ -68,7 +67,7 @@ void FastLoader::HandleVanillaDataFiles()
 
     if (flaAudioLoaderSetting == 1) // --- STATE 1: LOADER IS ON ---
     {
-        // This is the existing backup logic
+        // ... (this 'if' block is unchanged)
         if (std::filesystem::exists(settingsPath) && !std::filesystem::exists(backupPath))
         {
             int result = MessageBox(NULL,
@@ -90,22 +89,22 @@ void FastLoader::HandleVanillaDataFiles()
     }
     else if (flaAudioLoaderSetting == -1) // --- STATE -1: RESET TO DEFAULT ---
     {
+        // <<< THIS BLOCK IS CHANGED >>>
         try
         {
-            // Open the .cfg file for writing (overwriting it)
-            std::ofstream out(settingsPath);
+            // Open the .cfg file for writing in BINARY mode
+            std::ofstream out(settingsPath, std::ios::binary);
             if (!out.is_open())
             {
                 throw std::runtime_error("Could not open settings file for writing.");
             }
 
-            // Write the default content from the header file
-            out << DefaultAudioData::GtaSaVehicleAudioSettings;
+            // Write the default content from the header file as raw bytes
+            out.write(reinterpret_cast<const char*>(DefaultAudioData::GtaSaVehicleAudioSettings_data),
+                DefaultAudioData::GtaSaVehicleAudioSettings_len);
             out.close();
 
-            // IMPORTANT: Set the INI value back to 0 (Off),
-            // to avoid resetting the file every time the game starts.
-            // Assuming you have a WriteInteger function or similar.
+            // Set the INI value back to 0 (Off)
             gConfig.WriteInteger("MAIN", "FLAAudioLoader", 0);
 
             MessageBox(NULL, "'gtasa_vehicleAudioSettings.cfg' has been reset to default.\n\nFLAAudioLoader has been set to 0 (Off) in your INI.", MODNAME, MB_OK | MB_ICONINFORMATION);
@@ -114,11 +113,8 @@ void FastLoader::HandleVanillaDataFiles()
         {
             MessageBox(NULL, ("Failed to reset audio settings: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
         }
+        // <<< END OF CHANGES >>>
     }
-    // else (flaAudioLoaderSetting == 0) // --- STATE 0: LOADER IS OFF ---
-    // {
-    //     // Do nothing, file is left as-is
-    // }
 
     // <<< END OF AUDIO LOGIC >>>
 
@@ -129,10 +125,10 @@ void FastLoader::HandleVanillaDataFiles()
         return;
     }
 
+    // ... (rest of the function is unchanged) ...
     std::function<void(const std::filesystem::path&)> traverse;
     traverse = [&](const std::filesystem::path& dir)
         {
-            // ... (rest of this function is unchanged) ...
             for (const auto& entry : std::filesystem::directory_iterator(dir))
             {
                 if (entry.is_directory())
@@ -197,7 +193,7 @@ void FastLoader::HandleVanillaDataFiles()
 // <<< MODIFIED PARSEMODLOADER FUNCTION (PARSING ONLY) >>>
 void FastLoader::ParseModloader()
 {
-    // ... (this function is unchanged) ...
+    // ... (no changes in this function) ...
     std::function<void(const std::filesystem::path&)> traverse;
     traverse = [&](const std::filesystem::path& dir)
         {

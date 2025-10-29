@@ -23,7 +23,7 @@
     </ClInclude>
     <ClInclude Include="..\src\pch.h" />
     <ClInclude Include="..\src\tVehicleAudioSetting.h" />
-    <ClInclude Include="default_audio_data.h">
+    <ClInclude Include="..\src\loader\default_audio_data.h">
       <Filter>loader</Filter>
     </ClInclude>
   </ItemGroup>
