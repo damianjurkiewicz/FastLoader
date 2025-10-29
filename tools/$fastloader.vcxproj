@@ -109,6 +109,7 @@
     <ClInclude Include="..\src\loader\objdat.h" />
     <ClInclude Include="..\src\pch.h" />
     <ClInclude Include="..\src\tVehicleAudioSetting.h" />
+    <ClInclude Include="default_audio_data.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\dllmain.cpp" />
