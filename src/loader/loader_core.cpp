@@ -13,16 +13,27 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
         return;
     }
 
+    // <<< REORDERED >>>
+    // 1. First, check for conflicting .dat files and handle backups
+    HandleVanillaDataFiles();
+
+    // 2. Only then, parse the .fastloader files to load mod data
     ParseModloader();
+
+    // 3. Process the loaded data
     if (gConfig.ReadBoolean("MAIN", "AdditionalTxdLoader", true))
     {
         AdditionalTXD.Init();
     }
-    FLAAudioLoader.Process();
+    if (gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true))
+    {
+        FLAAudioLoader.Process();
+    }
 }
 
 bool FastLoader::IsPluginNameValid()
 {
+    // ... (no changes)
     char buf[MAX_PATH];
     DWORD result = GetModuleFileName(handle, buf, MAX_PATH);
     if (!result)
@@ -47,6 +58,132 @@ bool FastLoader::IsPluginNameValid()
     return true;
 }
 
+// <<< MODIFIED FUNCTION TO HANDLE ALL BACKUPS >>>
+void FastLoader::HandleVanillaDataFiles()
+{
+    // 1. Read INI settings at the very beginning
+    bool bObjDatLoaderEnabled = gConfig.ReadBoolean("MAIN", "ObjDatLoader", true);
+    bool bCargrpLoaderEnabled = gConfig.ReadBoolean("MAIN", "CargrpLoader", true);
+    bool bFLAAudioLoaderEnabled = gConfig.ReadBoolean("MAIN", "FLAAudioLoader", true); // Added this check
+
+    // <<< START OF AUDIO BACKUP LOGIC >>>
+    // This logic runs independently, as it checks the 'data' folder, not 'modloader'
+    if (bFLAAudioLoaderEnabled)
+    {
+        std::string settingsPath = GAME_PATH((char*)"data/gtasa_vehicleAudioSettings.cfg");
+        std::string backupPath = settingsPath + ".fastloader.bak"; // Use a unique, persistent backup name
+
+        // Check if the original file exists AND our backup does NOT exist yet
+        if (std::filesystem::exists(settingsPath) && !std::filesystem::exists(backupPath))
+        {
+            // Ask the user for permission
+            int result = MessageBox(NULL,
+                "FastLoader (FLAAudioLoader) is about to modify 'gtasa_vehicleAudioSettings.cfg' to add new vehicle sounds.\n\n"
+                "Do you want to create a one-time backup of the original file? (Recommended)",
+                MODNAME,
+                MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON1);
+
+            if (result == IDYES)
+            {
+                try
+                {
+                    // This is a TRUE backup. We copy the file, not rename it.
+                    std::filesystem::copy_file(settingsPath, backupPath, std::filesystem::copy_options::overwrite_existing);
+                }
+                catch (const std::exception& e)
+                {
+                    MessageBox(NULL, ("Failed to create audio backup: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
+                }
+            }
+            // If user clicks NO, we just continue. The file will be patched without a backup.
+        }
+    }
+    // <<< END OF AUDIO BACKUP LOGIC >>>
+
+
+    // <<< START OF .DAT FILE LOGIC (TRAVERSAL) >>>
+    // If both .dat loaders are disabled, no need to scan the modloader folder
+    if (!bObjDatLoaderEnabled && !bCargrpLoaderEnabled)
+    {
+        // We return here, after the audio check is complete
+        return;
+    }
+
+    // Use the same traversal logic, but only for .dat files in 'modloader'
+    std::function<void(const std::filesystem::path&)> traverse;
+    traverse = [&](const std::filesystem::path& dir)
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(dir))
+            {
+                if (entry.is_directory())
+                {
+                    std::string folderName = entry.path().filename().string();
+                    if (!folderName.empty() && folderName[0] == '.')
+                    {
+                        continue;
+                    }
+                    traverse(entry.path());
+                    continue;
+                }
+
+                if (!entry.is_regular_file())
+                {
+                    continue;
+                }
+
+                std::string fileName = entry.path().filename().string();
+
+                // --- Logic for object.dat ---
+                if (bObjDatLoaderEnabled && fileName == "object.dat")
+                {
+                    std::string path = entry.path().string();
+                    std::string parentPath = entry.path().parent_path().string();
+                    int result = MessageBox(NULL, "Found object.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
+                    if (result == IDYES)
+                    {
+                        std::string newName = fileName + ".bak";
+                        std::string newPath = parentPath + "\\" + newName;
+                        try
+                        {
+                            std::filesystem::rename(path, newPath);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
+                        }
+                    }
+                }
+
+                // --- Logic for cargrp.dat ---
+                if (bCargrpLoaderEnabled && fileName == "cargrp.dat")
+                {
+                    std::string path = entry.path().string();
+                    std::string parentPath = entry.path().parent_path().string();
+                    int result = MessageBox(NULL, "Found cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
+                    if (result == IDYES)
+                    {
+                        std::string newName = fileName + ".bak";
+                        std::string newPath = parentPath + "\\" + newName;
+                        try
+                        {
+                            std::filesystem::rename(path, newPath);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
+                        }
+                    }
+                }
+            }
+        };
+
+    // Run the traversal for the .dat files
+    traverse(GAME_PATH((char*)"modloader"));
+}
+
+
+
+// <<< MODIFIED PARSEMODLOADER FUNCTION (PARSING ONLY) >>>
 void FastLoader::ParseModloader()
 {
     std::function<void(const std::filesystem::path&)> traverse;
@@ -73,56 +210,11 @@ void FastLoader::ParseModloader()
 
                 std::string ext = entry.path().extension().string();
                 std::string path = entry.path().string();
-                std::string fileName = entry.path().filename().string();
-                std::string parentPath = entry.path().parent_path().string();
 
+                // object.dat logic removed from here
+                // cargrp.dat logic removed from here
 
-                // <<< START OF CHANGES FOR OBJECT.DAT >>>
-                // The question will only appear if "ObjDatLoader" is true AND the file is found
-                if (fileName == "object.dat" && gConfig.ReadBoolean("MAIN", "ObjDatLoader", true))
-                {
-                    // Removed 'static' from 'result' so the question appears for EVERY file found, not just once.
-                    int result = MessageBox(NULL, "Found object.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                    if (result == IDYES)
-                    {
-                        std::string newName = fileName + ".bak";
-                        std::string newPath = parentPath + "\\" + newName;
-                        try
-                        {
-                            std::filesystem::rename(path, newPath);
-                        }
-                        catch (const std::exception& e)
-                        {
-                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                        }
-                    }
-                }
-                // <<< END OF CHANGES FOR OBJECT.DAT >>>
-
-
-                // <<< START OF CHANGES FOR CARGRP.DAT >>>
-                // The question will only appear if "CargrpLoader" is true AND the file is found
-                if (fileName == "cargrp.dat" && gConfig.ReadBoolean("MAIN", "CargrpLoader", true))
-                {
-                    // Removed 'static' from 'result' for the same reason as above.
-                    int result = MessageBox(NULL, "Found cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                    if (result == IDYES)
-                    {
-                        std::string newName = fileName + ".bak";
-                        std::string newPath = parentPath + "\\" + newName;
-                        try
-                        {
-                            std::filesystem::rename(path, newPath);
-                        }
-                        catch (const std::exception& e)
-                        {
-                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                        }
-                    }
-                }
-                // <<< END OF CHANGES FOR CARGRP.DAT >>>
-
-
+                // This function now ONLY parses .fastloader files
                 if (ext == ".fastloader")
                 {
                     std::ifstream in(path);
