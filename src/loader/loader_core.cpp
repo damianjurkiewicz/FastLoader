@@ -28,25 +28,12 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
 
 bool FastLoader::IsPluginNameValid()
 {
-    // ... (no changes in this function)
-    char buf[MAX_PATH];
-    DWORD result = GetModuleFileName(handle, buf, MAX_PATH);
-    if (!result)
-    {
-        MessageBox(NULL, "Failed to fetch filename", MODNAME, MB_OK);
-        return false;
-    }
-    std::string curName = buf;
-    size_t lastSlash = curName.find_last_of("\\/");
-    if (lastSlash != std::string::npos)
-    {
-        curName = curName.substr(lastSlash + 1);
-    }
-    if (curName != MODNAME_EXT)
-    {
-        MessageBox(NULL, "The plugin was renamed. Exiting...!", MODNAME, MB_OK);
-        return false;
-    }
+    MessageBox(
+        NULL,
+        "Asi nr 1'.",
+        MODNAME,
+        MB_OK | MB_ICONINFORMATION
+    );
     return true;
 }
 
@@ -70,21 +57,13 @@ void FastLoader::HandleVanillaDataFiles()
         // ... (this 'if' block is unchanged)
         if (std::filesystem::exists(settingsPath) && !std::filesystem::exists(backupPath))
         {
-            int result = MessageBox(NULL,
-                "FastLoader (FLAAudioLoader) is about to modify 'gtasa_vehicleAudioSettings.cfg' to add new vehicle sounds.\n\n"
-                "Do you want to create a one-time backup of the original file? (Recommended)",
+            MessageBox(
+                NULL,
+                "Asi nr 1'.",
                 MODNAME,
-                MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON1);
+                MB_OK | MB_ICONINFORMATION
+            );
 
-            if (result == IDYES)
-            {
-                try {
-                    std::filesystem::copy_file(settingsPath, backupPath, std::filesystem::copy_options::overwrite_existing);
-                }
-                catch (const std::exception& e) {
-                    MessageBox(NULL, ("Failed to create audio backup: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                }
-            }
         }
     }
     else if (flaAudioLoaderSetting == -1) // --- STATE -1: RESET TO DEFAULT ---
