@@ -6,7 +6,7 @@ class FastLoader
 private:
     HINSTANCE handle;
 
-    bool IsPluginNameValid();
+   
     void ParseModloader();
     void HandleVanillaDataFiles(); 
 
