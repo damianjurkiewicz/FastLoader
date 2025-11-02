@@ -8,7 +8,9 @@ private:
 
     bool IsPluginNameValid();
     void ParseModloader();
+    void HandleVanillaDataFiles(); 
 
 public:
     FastLoader(HINSTANCE pluginHandle);
 };
+
