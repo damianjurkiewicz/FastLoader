@@ -103,22 +103,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\loader\additionaltxd.h" />
     <ClInclude Include="..\src\loader\audio.h" />
-    <ClInclude Include="..\src\loader\cargrp.h" />
     <ClInclude Include="..\src\loader\default_audio_data.h" />
     <ClInclude Include="..\src\loader\loader_core.h" />
-    <ClInclude Include="..\src\loader\objdat.h" />
     <ClInclude Include="..\src\pch.h" />
     <ClInclude Include="..\src\tVehicleAudioSetting.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\dllmain.cpp" />
-    <ClCompile Include="..\src\loader\additionaltxd.cpp" />
     <ClCompile Include="..\src\loader\audio.cpp" />
-    <ClCompile Include="..\src\loader\cargrp.cpp" />
     <ClCompile Include="..\src\loader\loader_core.cpp" />
-    <ClCompile Include="..\src\loader\objdat.cpp" />
     <ClCompile Include="..\src\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

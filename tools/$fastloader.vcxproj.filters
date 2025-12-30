@@ -6,19 +6,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\loader\additionaltxd.h">
-      <Filter>loader</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\loader\audio.h">
       <Filter>loader</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\loader\cargrp.h">
-      <Filter>loader</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\loader\loader_core.h">
-      <Filter>loader</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\loader\objdat.h">
       <Filter>loader</Filter>
     </ClInclude>
     <ClInclude Include="..\src\pch.h" />
@@ -29,19 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\dllmain.cpp" />
-    <ClCompile Include="..\src\loader\additionaltxd.cpp">
-      <Filter>loader</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\loader\audio.cpp">
       <Filter>loader</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\loader\cargrp.cpp">
-      <Filter>loader</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\loader\loader_core.cpp">
-      <Filter>loader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\loader\objdat.cpp">
       <Filter>loader</Filter>
     </ClCompile>
     <ClCompile Include="..\src\pch.cpp" />

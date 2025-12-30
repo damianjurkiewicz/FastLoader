@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "loader_core.h"
 #include "audio.h"
-#include "cargrp.h"
-#include "objdat.h"
-#include "additionaltxd.h"
 #include "default_audio_data.h" 
 
 FastLoader::FastLoader(HINSTANCE pluginHandle)
@@ -13,10 +10,7 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
 
     HandleVanillaDataFiles();
     ParseModloader();
-    if (gConfig.ReadInteger("MAIN", "AdditionalTxdLoader", 1) == 1)
-    {
-        AdditionalTXD.Init();
-    }
+
     if (gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1) == 1)
     {
         FLAAudioLoader.Process();
@@ -27,8 +21,6 @@ FastLoader::FastLoader(HINSTANCE pluginHandle)
 void FastLoader::HandleVanillaDataFiles()
 {
    
-    bool bObjDatLoaderEnabled = (gConfig.ReadInteger("MAIN", "ObjDatLoader", 1) == 1);
-    bool bCargrpLoaderEnabled = (gConfig.ReadInteger("MAIN", "CargrpLoader", 1) == 1);
 
     int flaAudioLoaderSetting = gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1);
 
@@ -91,13 +83,6 @@ void FastLoader::HandleVanillaDataFiles()
 
     
 
-
-    
-    if (!bObjDatLoaderEnabled && !bCargrpLoaderEnabled)
-    {
-        return;
-    }
-
    
     std::function<void(const std::filesystem::path&)> traverse;
     traverse = [&](const std::filesystem::path& dir)
@@ -120,41 +105,8 @@ void FastLoader::HandleVanillaDataFiles()
                 }
                 std::string fileName = entry.path().filename().string();
 
-                if (bObjDatLoaderEnabled && fileName == "object.dat")
-                {
-                    std::string path = entry.path().string();
-                    std::string parentPath = entry.path().parent_path().string();
-                    int result = MessageBox(NULL, "Found object.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                    if (result == IDYES)
-                    {
-                        std::string newName = fileName + ".bak";
-                        std::string newPath = parentPath + "\\" + newName;
-                        try {
-                            std::filesystem::rename(path, newPath);
-                        }
-                        catch (const std::exception& e) {
-                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                        }
-                    }
-                }
 
-                if (bCargrpLoaderEnabled && fileName == "cargrp.dat")
-                {
-                    std::string path = entry.path().string();
-                    std::string parentPath = entry.path().parent_path().string();
-                    int result = MessageBox(NULL, "Found cargrp.dat in your modloader folder. Do you want to rename?", MODNAME, MB_YESNO | MB_ICONQUESTION);
-                    if (result == IDYES)
-                    {
-                        std::string newName = fileName + ".bak";
-                        std::string newPath = parentPath + "\\" + newName;
-                        try {
-                            std::filesystem::rename(path, newPath);
-                        }
-                        catch (const std::exception& e) {
-                            MessageBox(NULL, ("Failed to rename: " + std::string(e.what())).c_str(), MODNAME, MB_OK | MB_ICONERROR);
-                        }
-                    }
-                }
+              
             }
         };
 
@@ -198,15 +150,6 @@ void FastLoader::ParseModloader()
                         if (line.starts_with(";") || line.starts_with("//") || line.starts_with("#"))
                         {
                             continue;
-                        }
-
-                        if (gConfig.ReadInteger("MAIN", "CargrpLoader", 1) == 1)
-                        {
-                            CargrpLoader.Parse(line);
-                        }
-                        if (gConfig.ReadInteger("MAIN", "ObjDatLoader", 1) == 1)
-                        {
-                            ObjDatLoader.Parse(line);
                         }
                         if (gConfig.ReadInteger("MAIN", "FLAAudioLoader", 1) == 1)
                         {
