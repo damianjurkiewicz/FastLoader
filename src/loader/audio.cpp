@@ -1,7 +1,10 @@
 #include "pch.h"
 #include "audio.h"
 #include "tVehicleAudioSetting.h"
-#include <unordered_set> // <<< ADD THIS INCLUDE FOR THE DUPLICATE CHECK
+#include <unordered_set>
+#include <fstream>
+#include <filesystem>
+#include <string>
 
 CFLAAudioLoader FLAAudioLoader;
 
